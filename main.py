@@ -55,7 +55,7 @@ def f1_1(message):
     except Exception as e:
         print(e)
         msg = bot.send_message(message.chat.id,
-                               f'{e}\noooops, попробуйте еще раз..\n\n Введите \\start для продолжения')
+                               f'{e}\noooops, попробуйте еще раз..\n\nВведите \\start для продолжения')
         
 
 
@@ -92,7 +92,7 @@ def f1_2(message):
     except Exception as e:
         print(e)
         msg = bot.send_message(message.chat.id,
-                               f'{e}\noooops, попробуйте еще раз..\n\n Введите \\start для продолжения')
+                               f'{e}\noooops, попробуйте еще раз..\n\nВведите \\start для продолжения')
 
 
 # ожидаем пароль
@@ -117,24 +117,25 @@ def f1_3(message):
     except Exception as e:
         print(e)
         msg = bot.send_message(message.chat.id,
-                               f'{e}\noooops, попробуйте еще раз..\n\n Введите \\start для продолжения')
+                               f'{e}\noooops, попробуйте еще раз..\n\nВведите \\start для продолжения')
 
 
 # выбор предмета
 def f2_1(message):
     try:
         print(message.from_user.id, message.text, "f2_1")
-        msg = bot.send_message(message.chat.id, f'Доступен выбор предмета. Укажите только номер.\n')
-        
+
+        s = "Доступен выбор предмета. Укажите только номер:\n"
         for i in range(0,len(subjects)):
-            subjects[i]['name']
-            msg = bot.send_message(message.chat.id, f"{i+1}. {subjects[i]['name']}\n")
+            s += f"{i+1}. {subjects[i]['name']}\n"
+            
+        msg = bot.send_message(message.chat.id, s)
         bot.register_next_step_handler(msg, f2_2)
         
     except Exception as e:
         print(e)
         msg = bot.send_message(message.chat.id,
-                               f'{e}\noooops, попробуйте еще раз..\n\n Введите \\start для продолжения')
+                               f'{e}\noooops, попробуйте еще раз..\n\nВведите \\start для продолжения')
 
 # ожидаем выбор предмета
 def f2_2(message):
@@ -161,7 +162,7 @@ def f2_2(message):
     except Exception as e:
         print(e)
         msg = bot.send_message(message.chat.id,
-                               f'{e}\noooops, попробуйте еще раз..\n\n Введите \\start для продолжения')
+                               f'{e}\noooops, попробуйте еще раз..\n\nВведите \\start для продолжения')
 
 if __name__ == "__main__":
     start = time.time()
