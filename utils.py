@@ -31,7 +31,12 @@ def create_user(login, password):
     with sqlite3.connect(DB_SYS_PATH) as db:
         sql = "INSERT INTO login_password(logins, passwords) VALUES(?, ?);"
         db.execute(sql, (login, password,))
- 
+
+def get_topics(path):
+    with sqlite3.connect(path) as db:
+        sql = f"SELECT DISTINCT topics FROM tasks;"
+        return db.execute(sql)
+
 
 def random_pass():
     pass_w = ""
