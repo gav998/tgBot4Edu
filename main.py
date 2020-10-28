@@ -8,7 +8,7 @@ bot = telebot.TeleBot(TOKEN)
 
 users = {}
 
-# временное решение. используется в f2
+# список доступных дисциплин
 subjects = {}
 # Информатика
 subjects[0] = {}
@@ -44,11 +44,14 @@ def f1_1(message):
             #- деавторизуем, но надо другой командой. не тут
         else:
             # просим указать номер по списку в ЭЖД
-            msg = bot.send_message(message.chat.id,
-                                   f'Привет, {message.from_user.first_name}!\n\n' +
-                                   f'Я бот проекта школы №1191! Для авторизации укажи свой идентификационный код:\n' +
-                                   f'(номер класса)(буква класса)_(номер по списку в ЭЖД)\n\n' +
-                                   f'Например, для ученика 7Б класса под номером 11 в ЭЖД, идентификационный код будет таким: 7Б_11\n')
+            s = f'Привет, {message.from_user.first_name}!\n\n'
+            s += f'Я бот проекта школы №1191! (https://github.com/gav998/tgBot4Edu/)\n'
+            s += f'Для авторизации укажи свой идентификационный код:\n'
+            s += f'(номер класса)(буква класса)_(номер по списку в ЭЖД)\n\n'
+            s += f'Например, для ученика 7Б класса под номером 11 в ЭЖД,'
+            s += f'идентификационный код будет таким: 7Б_11\n'
+            msg = bot.send_message(message.chat.id, s)
+                                   
             # ожидаем номера ЭЖД
             bot.register_next_step_handler(msg, f1_2)
 
@@ -65,7 +68,8 @@ def f1_2(message):
         print(message.from_user.id, message.text, "f1_2")
         if message.content_type != "text":
             raise Exception("Ожидалось текстовое сообщение")
-            
+        if not check_re(message.text):
+            raise Exception("Неправильный формат идентификационного кода")
         users[message.from_user.id]['login'] = message.text
         
         # если такой пользователь существует, то и пароль у него существует
@@ -183,6 +187,7 @@ def f2_3(message):
         s += 'Для перехода к следующей модификации задания напечатайте "Next"\n'
         s += 'Для остановки напечатайте "End"\n\n'
         s += 'Удачи!\n'
+        
         msg = bot.send_message(message.chat.id, s)
         bot.register_next_step_handler(msg, f3_1)
         # переходим к решению задач
@@ -192,8 +197,23 @@ def f2_3(message):
         msg = bot.send_message(message.chat.id,
                                f'{e}\noooops, попробуйте еще раз..\n\nВведите \\start для продолжения')
 
+# Выбираем подходящую задачу
+def f3_1(message):
+    try:
+        print(message.from_user.id, message.text, "f3_1")
+        
+        #выбираем вариацию по принципу: наименьшая сумма количества использований задач.
+        #Для быстродействия увеличиваем счетчик локальной переменной темы одновременно с увеличением счетчика задачи
 
+        #выбираем задачу по принципу наименьшего количества использований
+        #task_id = get_task_id(subjects[users[message.from_user.id]['subject']]['path'],
+        #                      users[message.from_user.id]['topic'])
 
+        
+    except Exception as e:
+        print(e)
+        msg = bot.send_message(message.chat.id,
+                               f'{e}\noooops, попробуйте еще раз..\n\nВведите \\start для продолжения')
 
 
 if __name__ == "__main__":

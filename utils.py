@@ -37,6 +37,10 @@ def get_topics(path):
         sql = f"SELECT DISTINCT topics FROM tasks;"
         return db.execute(sql)
 
+def get_task_id(path, topic):
+    with sqlite3.connect(path) as db:
+        sql = f"SELECT DISTINCT topics FROM tasks;"
+        return db.execute(sql)
 
 def random_pass():
     pass_w = ""
