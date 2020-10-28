@@ -137,13 +137,13 @@ def f2_1(message):
         msg = bot.send_message(message.chat.id,
                                f'{e}\noooops, попробуйте еще раз..\n\nВведите \\start для продолжения')
 
-# ожидаем выбор предмета
+# ожидаем выбор предмета и запрашиваем тему
 def f2_2(message):
     try:
         print(message.from_user.id, message.text, "f2_2")
         if message.content_type != "text":
             raise Exception("Ожидалось текстовое сообщение")
-        if not message.text.isnumeric:
+        if not message.text.isnumeric():
             raise Exception("Ожидалось число")
         if int(message.text) > len(subjects):
             raise Exception("Такого предмета нет в списке")
@@ -154,7 +154,7 @@ def f2_2(message):
         
         s = "Выберете тему:\n"
         for key, value in subjects[users[message.from_user.id]['subject']]['topics'].items():
-            s += f'{key}. {value}\n'
+            s += f'{key+1}. {value}\n'
         msg = bot.send_message(message.chat.id, s)
         bot.register_next_step_handler(msg, f2_3)
         # просим указать тему
@@ -163,6 +163,38 @@ def f2_2(message):
         print(e)
         msg = bot.send_message(message.chat.id,
                                f'{e}\noooops, попробуйте еще раз..\n\nВведите \\start для продолжения')
+
+# Ожидаем тему
+def f2_3(message):
+    try:
+        print(message.from_user.id, message.text, "f2_3")
+        if message.content_type != "text":
+            raise Exception("Ожидалось текстовое сообщение")
+        if not message.text.isnumeric():
+            raise Exception("Ожидалось число")
+        if int(message.text) > len(subjects[users[message.from_user.id]['subject']]['topics']):
+            raise Exception("Такой темы нет в списке")
+
+        #запоминаем тему, которую выбрал пользователь
+        users[message.from_user.id]['topic'] = int(message.text)-1
+
+        s = 'Начнем\n'
+        s += 'Если Вы обнаружили ошибку в задании напечатайте "Error"\n'
+        s += 'Для перехода к следующей модификации задания напечатайте "Next"\n'
+        s += 'Для остановки напечатайте "End"\n\n'
+        s += 'Удачи!\n'
+        msg = bot.send_message(message.chat.id, s)
+        bot.register_next_step_handler(msg, f3_1)
+        # переходим к решению задач
+        
+    except Exception as e:
+        print(e)
+        msg = bot.send_message(message.chat.id,
+                               f'{e}\noooops, попробуйте еще раз..\n\nВведите \\start для продолжения')
+
+
+
+
 
 if __name__ == "__main__":
     start = time.time()
