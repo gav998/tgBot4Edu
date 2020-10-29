@@ -9,8 +9,8 @@ bot = telebot.TeleBot(TOKEN)
 users = {}
 
 # список доступных дисциплин
-subjects = {0: {}}
 # Информатика
+subjects = {0: {}}
 subjects[0]['name'] = 'Информатика'
 subjects[0]['path'] = 'tasks/inf.db'
 
@@ -19,11 +19,10 @@ subjects[0]['path'] = 'tasks/inf.db'
 for subject in subjects.keys():
     subjects[subject]['topics'] = {}
     topics = get_topics(subjects[subject]['path'])
-    for i in range(0, len(topics[0])):
-        subjects[subject]['topics'][i] = {}
-        subjects[subject]['topics'][i]['name'] = topics[i][0]
-        for variant in variants:
-            subjects[subject]['topics'][i][variant] = {}
+    topic_num = 0
+    for topic in topics:
+        subjects[subject]['topics'][topic_num] = {'name': topic[0]}
+        topic_num += 1
         
 
 
@@ -154,12 +153,14 @@ def f2_2(message):
             raise Exception("Такого предмета нет в списке")
 
         #запоминаем номер предмета, который выбрал пользователь
-        users[message.from_user.id]['subject'] = int(message.text)-1
+        n = users[message.from_user.id]['subject'] = int(message.text)-1
         
         
         s = "Выберете тему:\n"
-        for key, value in subjects[users[message.from_user.id]['subject']]['topics'].items():
-            s += f'{key+1}. {value}\n'
+        for t in range(0, len(subjects[n]['topics'])):
+            s += f"{t+1}. {subjects[n]['topics'][t]['name']}\n"
+        #for key, value in subjects[users[message.from_user.id]['subject']]['topics'].items():
+        #    s += f'{key+1}. {value}\n'
         msg = bot.send_message(message.chat.id, s)
         bot.register_next_step_handler(msg, f2_3)
         # просим указать тему
