@@ -20,10 +20,12 @@ subjects[0]['path'] = 'tasks/inf.db'
 for subject in subjects.keys():
     subjects[subject]['topics'] = {}
     topics = get_topics(subjects[subject]['path'])
-    i = 0
-    for topic in topics:
-        subjects[subject]['topics'][i] = topic[0]
-        i += 1
+    for i in range(0, len(topics[0])):
+        subjects[subject]['topics'][i] = {}
+        subjects[subject]['topics'][i]['name'] = topics[i][0]
+        for variant in variants:
+            subjects[subject]['topics'][i][variant] = {}
+        
 
 
 # ожидание команды start

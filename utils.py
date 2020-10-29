@@ -34,7 +34,7 @@ def create_user(login, password):
 
 def get_topics(path):
     with sqlite3.connect(path) as db:
-        sql = f"SELECT DISTINCT topics FROM tasks;"
+        sql = f"SELECT DISTINCT topics FROM tasks ORDER BY topics;"
         return db.execute(sql)
 
 def get_task_id(path, topic):
