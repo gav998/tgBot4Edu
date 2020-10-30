@@ -20,8 +20,11 @@ for subject in subjects.keys():
     subjects[subject]['topics'] = {}
     topics = get_topics(subjects[subject]['path'])
     topic_num = 0
-    for topic in topics:
-        subjects[subject]['topics'][topic_num] = {'name': topic[0]}
+    for topic, max_level in topics:
+        subjects[subject]['topics'][topic_num] = {}
+        subjects[subject]['topics'][topic_num]['name'] = topic
+        subjects[subject]['topics'][topic_num]['max_level'] = max_level
+        #еще можно находить кол-во задач для всех уровней для равномерности
         topic_num += 1
         
 
@@ -158,7 +161,7 @@ def f2_2(message):
         
         s = "Выберете тему:\n"
         for t in range(0, len(subjects[n]['topics'])):
-            s += f"{t+1}. {subjects[n]['topics'][t]['name']}\n"
+            s += f"{t+1}. {subjects[n]['topics'][t]['name']} \t{subjects[n]['topics'][t]['max_level']} макс. уровень\n"
         #for key, value in subjects[users[message.from_user.id]['subject']]['topics'].items():
         #    s += f'{key+1}. {value}\n'
         msg = bot.send_message(message.chat.id, s)
@@ -182,8 +185,9 @@ def f2_3(message):
             raise Exception("Такой темы нет в списке")
 
         #запоминаем тему, которую выбрал пользователь
-        users[message.from_user.id]['topic'] = int(message.text)-1
-
+        users[message.from_user.id]['topic_num'] = int(message.text)-1
+        users[message.from_user.id]['topic'] = subjects[subject]['topics'][int(message.text)-1]['name']
+        
         s = 'Начнем\n'
         s += 'Если Вы обнаружили ошибку в задании напечатайте "Error"\n'
         s += 'Для перехода к следующей модификации задания напечатайте "Next"\n'
@@ -191,7 +195,7 @@ def f2_3(message):
         s += 'Удачи!\n'
         
         msg = bot.send_message(message.chat.id, s)
-        bot.register_next_step_handler(msg, f3_1)
+        f3_1(message)
         # переходим к решению задач
         
     except Exception as e:
@@ -202,15 +206,37 @@ def f2_3(message):
 # Выбираем подходящую задачу
 def f3_1(message):
     try:
-        print(message.from_user.id, message.text, "f3_1")
+        print(message.from_user.id, message.text, "f3_1")    
         
-        #выбираем вариацию по принципу: наименьшая сумма количества использований задач.
-        #Для быстродействия увеличиваем счетчик локальной переменной темы одновременно с увеличением счетчика задачи
+        #передаем логин, предмет, тему
+        #тут вся магия подбора задачи для пользователя
+        task_id, difficulty_level = get_task_id(users[message.from_user.id]['login'],
+                              subjects[users[message.from_user.id]['subject']]['path'],
+                              users[message.from_user.id]['topic'])
+        if (task_id == None):
+            raise Exception("Для Вас не нашлось задачи столь высокого уровня.. coming soon")
+        text, attachment, correct_answer = get_task_text(subjects[users[message.from_user.id]['subject']]['path'],task_id)
 
-        #выбираем задачу по принципу наименьшего количества использований
-        #task_id = get_task_id(subjects[users[message.from_user.id]['subject']]['path'],
-        #                      users[message.from_user.id]['topic'])
 
+        #запоминаем все данные про задачу
+        users[message.from_user.id]['task'] = {}
+        users[message.from_user.id]['task']['task_id'] = task_id
+        users[message.from_user.id]['task']['difficulty_level'] = difficulty_level
+        users[message.from_user.id]['task']['text'] = text
+        users[message.from_user.id]['task']['attachment'] = attachment
+        users[message.from_user.id]['task']['correct_answer'] = correct_answer
+        topic_num = users[message.from_user.id]['topic_num']
+
+        
+        s = f"Уровень: {difficulty_level}/{subjects[subject]['topics'][topic_num]['max_level']}\n\n"
+        s += text
+        msg = bot.send_message(message.chat.id, s)
+        
+        #регистрируем время начала
+        users[message.from_user.id]['time_start'] = time.time()
+        
+        bot.register_next_step_handler(msg, f3_2)
+        # ожидание ответа
         
     except Exception as e:
         print(e)
