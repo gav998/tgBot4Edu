@@ -100,13 +100,14 @@ def get_task_id(login, path, topic):
 def get_task_text(path, task_id):
     with sqlite3.connect(path) as db:
         sql = "SELECT texts, attachments, answers FROM tasks WHERE ids = ?;"
-        for text, attachment, answer in db.execute(sql,(task_id,)):
+        for text, attachment, answer in db.execute(sql, (task_id,)):
             return text, attachment, answer
 
-def check_answer(path, task_id):
+
+def check_answer(path, task_id, answer):
     with sqlite3.connect(path) as db:
-        #sql = "SELECT DISTINCT topics FROM tasks;"
-        return db.execute(sql)
+        sql = "SELECT answers FROM tasks WHERE ids=(?)"
+        return str(db.execute(sql, task_id).fetchone()[0]) == str(answer)
         
         
 def insert_progress(path, user_data: dict):
