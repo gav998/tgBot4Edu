@@ -76,6 +76,7 @@ def get_task_id(login, path, topic):
     #проверяем, можем ли перейти на новый уровень
     if (count_correct > COUNT_CORRECT_4_NEXT_LEVEL) and (count_correct > count_correct * CORRECT_ABOVE_INCORRECT_IN):
         difficulty_level += 1
+        ####### ОБНОВИТЬ БД! Иначе дальше 2 уровня не продвинемся UPDATE
     # можно дополнительно проверять существует ли след уровень, если нет, то не повышать
     
     #Найти задачу подходящего уровня

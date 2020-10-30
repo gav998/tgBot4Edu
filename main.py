@@ -47,9 +47,12 @@ def f1_1(message):
             #- деавторизуем, но надо другой командой. не тут
         else:
             # просим указать номер по списку в ЭЖД
-            s = f'Привет, {message.from_user.first_name}!\n\n'
-            s += f'Я бот проекта школы №1191! (https://github.com/gav998/tgBot4Edu/)\n'
-            s += f'Для авторизации укажи свой идентификационный код:\n'
+            s = f'Здравствуйте, {message.from_user.first_name}!\n\n'
+            s += f'Данный телеграмм чат создан командой школы 1191 для тестирования обучающихся.\n'
+            s += f'Это opensource проект (https://github.com/gav998/tgBot4Edu/).\n'
+            s += f'Ты можешь поучаствовать в его доработке,'
+            s += f'присоединяйся к сообществу.\n\n'
+            s += f'Для старта тренировок укажи свой идентификационный код:\n'
             s += f'(номер класса)(буква класса)_(номер по списку в ЭЖД)\n\n'
             s += f'Например, для ученика 7Б класса под номером 11 в ЭЖД,'
             s += f'идентификационный код будет таким: 7Б_11\n'
@@ -183,7 +186,7 @@ def f2_3(message):
             raise Exception("Ожидалось число")
         if int(message.text) > len(subjects[users[message.from_user.id]['subject']]['topics']):
             raise Exception("Такой темы нет в списке")
-
+        
         #запоминаем тему, которую выбрал пользователь
         users[message.from_user.id]['topic_num'] = int(message.text)-1
         users[message.from_user.id]['topic'] = subjects[subject]['topics'][int(message.text)-1]['name']
@@ -193,7 +196,7 @@ def f2_3(message):
         s += 'Для перехода к следующей модификации задания напечатайте "Next"\n'
         s += 'Для остановки напечатайте "End"\n\n'
         s += 'Удачи!\n'
-        
+
         msg = bot.send_message(message.chat.id, s)
         f3_1(message)
         # переходим к решению задач
@@ -242,6 +245,36 @@ def f3_1(message):
         print(e)
         msg = bot.send_message(message.chat.id,
                                f'{e}\noooops, попробуйте еще раз..\n\nВведите /start для продолжения')
+
+# Ожидаем ответа на задачу
+def f3_2(message):
+    try:
+        print(message.from_user.id, message.text, "f3_2")
+        if message.content_type != "text":
+            raise Exception("Ожидалось текстовое сообщение")
+        if message.text == "Error":
+            # -увеличить счетчик ошибок в tasks
+            raise Exception("Сообщение об ошибке принято")
+        if message.text == "Exit":
+            raise Exception("Принято")
+        
+        # -увеличить счетчик использований в tasks
+        if message.text == users[message.from_user.id]['task']['correct_answer']:
+            # -обработать и добавить в достижение +
+            msg = bot.send_message(message.chat.id, "+")
+            #ответ правильный
+        else:
+            # -обработать и добавить в достижение -
+            msg = bot.send_message(message.chat.id, "-")
+            #ответ правильный
+            
+        f3_1(message)
+        
+    except Exception as e:
+        print(e)
+        msg = bot.send_message(message.chat.id,
+                               f'{e}\noooops, попробуйте еще раз..\n\nВведите /start для продолжения')
+
 
 
 if __name__ == "__main__":
