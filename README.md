@@ -1,5 +1,5 @@
 <h1 align="center">tgBot4Edu</h1>
-<h2>
+<h2 align="center">
     <img src="https://img.shields.io/badge/python->v3.6-blue?style=flat-square&logo=python" alt="">
     <img src="https://img.shields.io/badge/pytTelegramBotAPI-v3.7.3-blue?style=flat-square" alt="">
     <img src="https://img.shields.io/github/license/gav998/tgBot4Edu?style=flat-square" alt="">
