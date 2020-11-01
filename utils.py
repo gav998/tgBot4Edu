@@ -150,7 +150,7 @@ def random_pass():
 
 
 def check_re(text):
-    regexp = r"(^\d+\w_\d*)"
+    regexp = r"(^\d+[А-ЯЁ]_\d*)"
     matches = re.match(regexp, text)
     if matches is not None:
         return True
