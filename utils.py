@@ -61,22 +61,25 @@ def get_task_id(login, path, topic):
         );"""
         db.execute(sql)
         # находим текущий уровень для данной темы
-        sql = f"SELECT difficulty_levels, count_correct, count_incorrect FROM T{login}_achivements WHERE subjects = ? AND topics = ? ORDER BY difficulty_levels DESC;"
-
+        sql = f"SELECT difficulty_levels, count_correct, count_incorrect FROM T{login}_achivements WHERE subjects = ? AND topics = ? ORDER BY difficulty_levels DESC;" 
         for _difficulty_level, _count_correct, _count_incorrect in db.execute(sql, (path, topic,)):
             difficulty_level = _difficulty_level
             count_correct = count_correct
             count_incorrect = _count_incorrect
             break
+            
         # если данную тему ученик ранее не проходил, создадим запись с темой
         if difficulty_level == 0:
             sql = f"INSERT INTO T{login}_achivements(subjects, topics) VALUES(?, ?);"
             db.execute(sql, (path, topic,))
             difficulty_level = 1
-    # проверяем, можем ли перейти на новый уровень
-    if (count_correct > COUNT_CORRECT_4_NEXT_LEVEL) and (count_correct > count_correct * CORRECT_ABOVE_INCORRECT_IN):
-        difficulty_level += 1
-        ####### ОБНОВИТЬ БД! Иначе дальше 2 уровня не продвинемся UPDATE
+        # проверяем, можем ли перейти на новый уровень
+        if (count_correct > COUNT_CORRECT_4_NEXT_LEVEL) and (count_correct > count_correct * CORRECT_ABOVE_INCORRECT_IN):
+            difficulty_level += 1
+            # ОБНОВИТЬ БД! Иначе дальше 2 уровня не продвинемся        
+            sql = f"UPDATE T{login}_achivements SET difficulty_levels = difficulty_levels + 1 WHERE subjects = ? AND topics = ?"
+            db.execute(sql, (path, topic,))
+
     # можно дополнительно проверять существует ли след уровень, если нет, то не повышать
 
     # Найти задачу подходящего уровня
@@ -99,6 +102,8 @@ def get_task_id(login, path, topic):
 
 def get_task_text(path, task_id):
     with sqlite3.connect(path) as db:
+        sql = f"UPDATE tasks SET count_uses = count_uses + 1 WHERE ids = (?)"
+        db.execute(sql, (task_id,))
         sql = "SELECT texts, attachments, answers FROM tasks WHERE ids = ?;"
         for text, attachment, answer in db.execute(sql, (task_id,)):
             return text, attachment, answer
