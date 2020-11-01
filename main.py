@@ -272,7 +272,6 @@ def f3_2(message):
             # ответ правильный
 
         insert_progress(users[id_])
-        update_uses_count(path=subjects[users[message.from_user.id]['subject']]['path'], task_id=users[id_]["task"]["task_id"])
         # bot.register_next_step_handler(msg, f2_2)
         f3_1(message)
 
