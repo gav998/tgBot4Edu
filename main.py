@@ -279,8 +279,13 @@ def f3_2(message):
             msg = bot.send_message(message.chat.id, "-")
             # ответ правильный
 
+<<<<<<< HEAD
         insert_progress(users[tg_user_id])
 
+=======
+        insert_progress(users[id_])
+        # bot.register_next_step_handler(msg, f2_2)
+>>>>>>> dff952cea00c5b5e40a860ea9c7e1c58af82d261
         f3_1(message)
 
     except Exception as e:
