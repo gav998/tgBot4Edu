@@ -5,7 +5,6 @@ import string
 
 DB_SYS_PATH = 'sys.db'
 DB_SCORES_PATH = 'scores.db'
-DB_PRO_PATH = 'user_progress.db'
 
 COUNT_CORRECT_4_NEXT_LEVEL = 10
 CORRECT_ABOVE_INCORRECT_IN = 2
@@ -111,17 +110,27 @@ def get_task_text(path, task_id):
 #         return str(db.execute(sql, task_id).fetchone()[0]) == str(answer)
 
 
+def update_uses_count(path, task_id: int):
+    with sqlite3.connect(path) as db:
+        sql = "UPDATE tasks SET count_uses = count_uses + 1 WHERE ids=(?)"
+        db.execute(sql, (task_id, ))
+
+
+def update_errors_count(path, task_id: int):
+    with sqlite3.connect(path) as db:
+        sql = "UPDATE tasks SET count_error = count_error + 1 WHERE ids=(?)"
+        db.execute(sql, (task_id, ))
+
+
 def insert_progress(user_data: dict):
     # тут должна быть вызвона функция получения задания
     # get_task_id()
-    login = user_data["login"]
     with sqlite3.connect(DB_SCORES_PATH) as db:
         if user_data["task_status"]:
-            sql = f"UPDATE T{login}_achivements SET count_correct = count_correct + 1 WHERE ids = (?)"
+            sql = f"UPDATE T{user_data['login']}_achivements SET count_correct = count_correct + 1 WHERE ids = (?)"
         else:
-            sql = f"UPDATE T{login}_achivements SET count_incorrect = count_incorrect + 1 WHERE ids = (?)"
-        res = db.execute(sql, (user_data["task"]["task_id"],))
-        print(res)
+            sql = f"UPDATE T{user_data['login']}_achivements SET count_incorrect = count_incorrect + 1 WHERE ids = (?)"
+        db.execute(sql, (user_data["task"]["task_id"],))
 
 
 def random_pass():

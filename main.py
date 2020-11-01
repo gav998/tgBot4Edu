@@ -254,6 +254,7 @@ def f3_2(message):
             raise Exception("Ожидалось текстовое сообщение")
         if message.text == "Error":
             # -увеличить счетчик ошибок в tasks
+            update_errors_count(subjects[users[message.from_user.id]['subject']]['path'], users[id_]["task"]["task_id"])
             raise Exception("Сообщение об ошибке принято")
         if message.text == "Exit":
             raise Exception("Принято")
@@ -271,6 +272,7 @@ def f3_2(message):
             # ответ правильный
 
         insert_progress(users[id_])
+        update_uses_count(path=subjects[users[message.from_user.id]['subject']]['path'], task_id=users[id_]["task"]["task_id"])
         # bot.register_next_step_handler(msg, f2_2)
         f3_1(message)
 
