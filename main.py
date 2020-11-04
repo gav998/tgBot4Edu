@@ -67,7 +67,7 @@ def f1_2(message):
         print(message.from_user.id, message.text, "f1_2")
         if message.content_type != "text":
             raise Exception("Ожидалось текстовое сообщение")
-        if not check_re(message.text):
+        if not check_user(message.text):
             raise Exception("Неправильный формат идентификационного кода")
         users[message.from_user.id]['login'] = message.text
 
