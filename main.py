@@ -6,7 +6,7 @@ import telebot
 
 bot = telebot.TeleBot(TOKEN)
 
-admin_chat_id = 46125815 # message.chat.id администратора ресурса для загрузки заданий в бд
+admin_chat_id = 461258157 # message.chat.id администратора ресурса для загрузки заданий в бд
 
 users = {}
 # users[tg_id]['login']
@@ -87,12 +87,17 @@ def f1_2(message):
             # сохраняем его пароль
             create_user(message.text, password)
             # сообщаем ученику его пароль
-            msg = bot.send_message(message.chat.id, f'Тебе назначен пароль:\n')
-            msg = bot.send_message(message.chat.id, password)
-            # авторизуем пользователя
-            set_login_authorization(message.text, message.from_user.id)
-            # отправляем его в функцию выбора предмета
-            f2_1(message)
+            if check_re(message.text):
+                msg = bot.send_message(message.chat.id, f'Тебе назначен пароль:\n')
+                msg = bot.send_message(message.chat.id, password)
+                # авторизуем пользователя
+                set_login_authorization(message.text, message.from_user.id)
+                # отправляем его в функцию выбора предмета
+                f2_1(message)
+            else:
+                s = f"Пользователю {message.text} назначен пароль {password}\n"
+                msg = bot.send_message(admin_chat_id, s)
+                msg = bot.send_message(message.chat.id, f'Пароль направлен администратору ресурса\nВведите /start для продолжения')
 
     except Exception as e:
         print(e)
@@ -103,17 +108,22 @@ def f1_2(message):
 # ожидаем пароль
 def f1_3(message):
     try:
-        print(message.from_user.id, message.text, "f1_3")
+        print(message.from_user.id, message.text, "f1_3")       
         if message.content_type != "text":
             raise Exception("Ожидалось текстовое сообщение")
 
         # сверка паролей    
         password = get_password(users[message.from_user.id]['login'])
         if message.text == password:
-            # - тут надо деавторизовать предыдущего tg_user_id если такой есть, и написать ему сообщение, что он того..
+            # деавторизовать предыдущего tg_user_id если такой есть, и написать ему сообщение, что он того..
+            
+            prev_id = get_id_authorization(users[message.from_user.id]['login'])
+            if prev_id is not None:
+                set_login_deauthorization(users[message.from_user.id]['login'])
+                msg = bot.send_message(prev_id, f'Выполнен вход с другого устройства')
+            
             # авторизуем пользователя
             set_login_authorization(users[message.from_user.id]['login'], message.from_user.id)
-            # - при попытке авторизовать др tg_id возникнет исключение бд т.к. записи уникальны должны быть
             msg = bot.send_message(message.chat.id, f'Успешно')
             # отправляем его в функцию выбора предмета
             f2_1(message)
@@ -122,15 +132,14 @@ def f1_3(message):
 
     except Exception as e:
         print(e)
-        msg = bot.send_message(message.chat.id,
-                               f'{e}\noooops, попробуйте еще раз..\n\nВведите /start для продолжения')
+        msg = bot.send_message(message.chat.id, f'{e}\noooops, попробуйте еще раз..\n\nВведите /start для продолжения')
 
 
 # выбор предмета
 def f2_1(message):
     try:
         print(message.from_user.id, message.text, "f2_1")
-
+            
         s = "Доступен выбор предмета. Укажите только номер:\n"
         for i in range(0, len(subjects)):
             s += f"{i + 1}. {subjects[i]['name']}\n"
@@ -140,8 +149,7 @@ def f2_1(message):
 
     except Exception as e:
         print(e)
-        msg = bot.send_message(message.chat.id,
-                               f'{e}\noooops, попробуйте еще раз..\n\nВведите /start для продолжения')
+        msg = bot.send_message(message.chat.id, f'{e}\noooops, попробуйте еще раз..\n\nВведите /start для продолжения')
 
 
 # ожидаем выбор предмета и запрашиваем тему
@@ -159,6 +167,14 @@ def f2_2(message):
         n = users[message.from_user.id]['subject_num'] = int(message.text) - 1
         users[message.from_user.id]['subject_path'] = subjects[n]['path']
         users[message.from_user.id]['subject'] = subjects[n]['name']
+        
+        # если это учитель, то формируем статистику
+        if (check_re_t(users[message.from_user.id]['login'])):
+                f4_1(message)
+                s = "Для повторного формирования отчета, напишите /start\n"
+                s += "Вы можете продолжить решать задачи по предмету.\n"
+                msg = bot.send_message(message.chat.id, s)
+        #
         s = "Выберете тему:\n"
         for t in range(0, len(subjects[n]['topics'])):
             s += f"{t + 1}. {subjects[n]['topics'][t]['name']}\n"
@@ -175,7 +191,7 @@ def f2_2(message):
 # Ожидаем тему
 def f2_3(message):
     try:
-        print(message.from_user.id, message.text, "f2_3")
+        print(message.from_user.id, message.text, "f2_3")    
         if message.content_type != "text":
             raise Exception("Ожидалось текстовое сообщение")
         if not message.text.isnumeric():
@@ -257,6 +273,8 @@ def f3_1(message):
 def f3_2(message):
     try:
         print(message.from_user.id, message.text, "f3_2")
+        if get_login_authorization(message.from_user.id) is None:
+            raise Exception("Вы не авторизованы")        
         tg_user_id = message.from_user.id
         
         if message.content_type != "text":
@@ -264,6 +282,8 @@ def f3_2(message):
         if message.text == "Error":
             # увеличиваем счетчик ошибок в tasks
             update_errors_count(users[tg_user_id]['subject_path'], users[tg_user_id]['task']['task_id'])
+            # увеличиваем счетчик ошибок в achivements
+            update_errors_count2(users[tg_user_id])
             raise Exception("Сообщение об ошибке принято")
         if message.text == "End":
             raise Exception("Принято")
@@ -288,6 +308,13 @@ def f3_2(message):
         print(e)
         msg = bot.send_message(message.chat.id,
                                f'{e}\n попробуем еще раз..\n\nВведите /start для продолжения')
+
+
+# Формирование отчета-статистики по предмету
+def f4_1(message):
+    print(message.from_user.id, message.text, "f4_1")
+    print(message.from_user.id, message.text, "f4_1")
+    pass
 
 
 if __name__ == "__main__":

@@ -4,9 +4,8 @@ import random
 import string
 
 DB_SYS_PATH = 'sys.db'
-DB_SCORES_PATH = 'scores.db'
 
-COUNT_CORRECT_4_NEXT_LEVEL = 10
+COUNT_CORRECT_4_NEXT_LEVEL = 3
 CORRECT_ABOVE_INCORRECT_IN = 2
 CRITICAL_COUNT_OF_ERROR_4_TASK = 5
 
@@ -40,11 +39,25 @@ def get_login_authorization(tg_user_id):
     return None
 
 
+def get_id_authorization(login):
+    with sqlite3.connect(DB_SYS_PATH) as db:
+        sql = "SELECT tg_user_ids FROM list_of_authorizations WHERE logins = ?;"
+        for _id in db.execute(sql, (login,)):
+            return _id[0]
+    return None
+
+
 def set_login_authorization(login, tg_user_id):
     with sqlite3.connect(DB_SYS_PATH) as db:
         sql = "INSERT INTO list_of_authorizations(logins, tg_user_ids) VALUES(?, ?);"
         db.execute(sql, (login, tg_user_id,))
 
+
+def set_login_deauthorization(login):
+    with sqlite3.connect(DB_SYS_PATH) as db:  
+        sql = "DELETE FROM list_of_authorizations WHERE logins = ?"
+        db.execute(sql, (login, )) 
+        
 
 def get_password(login):
     with sqlite3.connect(DB_SYS_PATH) as db:
@@ -69,22 +82,10 @@ def get_topics(path):
 def get_task_id(user_data: dict):
     # Определим текущий уровень ученика
     difficulty_level = count_correct = count_incorrect = 0
-    with sqlite3.connect(DB_SCORES_PATH) as db:
-        # создаем таблицу достижений ученика, если ее не существует
-        # - надо сделать безопаснее, но как?..
-        sql = f"""CREATE TABLE IF NOT EXISTS T{user_data['login']}_achivements (
-        ids INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-        subjects INTEGER NOT NULL,
-        topics TEXT NOT NULL,
-        difficulty_levels INTEGER NOT NULL DEFAULT (1),
-        count_correct INTEGER NOT NULL DEFAULT (0),
-        count_incorrect INTEGER NOT NULL DEFAULT (0)
-        );"""
-        db.execute(sql)
+    with sqlite3.connect(DB_SYS_PATH) as db:
         # находим текущий уровень для данной темы
-        sql = f"SELECT difficulty_levels, count_correct, count_incorrect FROM T{user_data['login']}_achivements WHERE subjects = ? AND topics = ? ORDER BY difficulty_levels DESC;"
-        for _difficulty_level, _count_correct, _count_incorrect in db.execute(sql, (
-        user_data['subject'], user_data['topic'],)):
+        sql = f"SELECT difficulty_levels, count_correct, count_incorrect FROM achivements WHERE logins = ? AND subjects = ? AND topics = ? ORDER BY difficulty_levels DESC;"
+        for _difficulty_level, _count_correct, _count_incorrect in db.execute(sql, (user_data['login'], user_data['subject'], user_data['topic'],)):
             difficulty_level = _difficulty_level
             count_correct = _count_correct
             count_incorrect = _count_incorrect
@@ -92,18 +93,17 @@ def get_task_id(user_data: dict):
 
         # если данную тему ученик ранее не проходил, создадим запись с темой
         if difficulty_level == 0:
-            sql = f"INSERT INTO T{user_data['login']}_achivements(subjects, topics) VALUES(?, ?);"
-            db.execute(sql, (user_data['subject'], user_data['topic'],))
+            sql = f"INSERT INTO achivements(logins, subjects, topics) VALUES(?, ?, ?);"
+            db.execute(sql, (user_data['login'], user_data['subject'], user_data['topic'],))
             difficulty_level = 1
         # проверяем, можем ли перейти на новый уровень
-        if (
-                count_correct > COUNT_CORRECT_4_NEXT_LEVEL):  # and (count_correct > count_incorrect * CORRECT_ABOVE_INCORRECT_IN):
+        if count_correct > COUNT_CORRECT_4_NEXT_LEVEL: 
             difficulty_level += 1
             count_correct = 0
             count_incorrect = 0
             # ОБНОВИТЬ БД! Иначе дальше 2 уровня не продвинемся 
-            sql = f"INSERT INTO T{user_data['login']}_achivements(subjects, topics, difficulty_levels) VALUES(?, ?, ?);"
-            db.execute(sql, (user_data['subject'], user_data['topic'], difficulty_level,))
+            sql = f"INSERT INTO achivements(logins, subjects, topics, difficulty_levels) VALUES(?, ?, ?, ?);"
+            db.execute(sql, (user_data['login'], user_data['subject'], user_data['topic'], difficulty_level,))
 
     # - можно дополнительно проверять существует ли след уровень, если нет, то не повышать
 
@@ -133,15 +133,19 @@ def update_errors_count(path, task_id: int):
         db.execute(sql, (task_id,))
 
 
+def update_errors_count2(user_data: dict):
+    with sqlite3.connect(DB_SYS_PATH) as db:
+        sql = f"UPDATE achivements SET count_error = count_error + 1 WHERE logins = (?) AND subjects = (?) AND topics = (?) AND difficulty_levels = (?)"
+        db.execute(sql, (user_data['login'], user_data['subject'], user_data['topic'], user_data['task']['difficulty_level'],))
+
+
 def insert_progress(user_data: dict):
-    # тут должна быть вызвона функция получения задания
-    # get_task_id()
-    with sqlite3.connect(DB_SCORES_PATH) as db:
+    with sqlite3.connect(DB_SYS_PATH) as db:
         if user_data["task_status"]:
-            sql = f"UPDATE T{user_data['login']}_achivements SET count_correct = count_correct + 1 WHERE topics = (?) AND difficulty_levels = (?)"
+            sql = f"UPDATE achivements SET count_correct = count_correct + 1 WHERE logins = (?) AND subjects = (?) AND topics = (?) AND difficulty_levels = (?)"
         else:
-            sql = f"UPDATE T{user_data['login']}_achivements SET count_incorrect = count_incorrect + 1 WHERE topics = (?) AND difficulty_levels = (?)"
-        db.execute(sql, (user_data['topic'], user_data['task']['difficulty_level'],))
+            sql = f"UPDATE achivements SET count_incorrect = count_incorrect + 1 WHERE logins = (?) AND subjects = (?) AND topics = (?) AND difficulty_levels = (?)"
+        db.execute(sql, (user_data['login'], user_data['subject'], user_data['topic'], user_data['task']['difficulty_level'],))
 
 
 def random_pass():
