@@ -1,6 +1,5 @@
-/settings.py
-/sys.db
-/scores.db
+# /settings.py
+# /sys.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
