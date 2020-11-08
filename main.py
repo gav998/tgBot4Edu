@@ -6,6 +6,8 @@ import telebot
 
 bot = telebot.TeleBot(TOKEN)
 
+admin_chat_id = '461258157' # message.chat.id администратора ресурса для загрузки заданий в бд
+
 users = {}
 # users[tg_id]['login']
 # users[tg_id]['subject_num']
@@ -28,7 +30,7 @@ subjects = get_subjects()
 @bot.message_handler(commands=['start'])
 def f1_1(message):
     try:
-        print(message.from_user.id, message.text, "f1_1")
+        print(message.from_user.id,message.chat.id, message.text, "f1_1")
         if message.content_type != "text":
             raise Exception("Ожидалось текстовое сообщение")
 
@@ -67,7 +69,7 @@ def f1_2(message):
         print(message.from_user.id, message.text, "f1_2")
         if message.content_type != "text":
             raise Exception("Ожидалось текстовое сообщение")
-        if not check_re(message.text):
+        if not (check_re(message.text) or check_re_t(message.text)):
             raise Exception("Неправильный формат идентификационного кода")
         users[message.from_user.id]['login'] = message.text
 
@@ -84,7 +86,7 @@ def f1_2(message):
             password = random_pass()
             # сохраняем его пароль
             create_user(message.text, password)
-            # сообщаем пользователю его пароль
+            # сообщаем ученику его пароль
             msg = bot.send_message(message.chat.id, f'Тебе назначен пароль:\n')
             msg = bot.send_message(message.chat.id, password)
             # авторизуем пользователя
@@ -205,7 +207,6 @@ def f2_3(message):
 def f3_1(message):
     try:
         print(message.from_user.id, message.text, "f3_1")
-        print(users)
         tg_user_id = message.from_user.id
         
         # тут вся магия подбора задачи для пользователя

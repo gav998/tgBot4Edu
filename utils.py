@@ -156,3 +156,15 @@ def check_re(text):
         return True
     else:
         return False
+
+
+def check_re_t(text):
+    regexp = r"(^teacher_\d*)"
+    matches = re.match(regexp, text)
+    if matches is not None:
+        return True
+    else:
+        return False
+
+def send_message_2_admin(s):
+    return bot.send_message(message.chat.id, f'Вы уже авторизованы под логином {login}')
