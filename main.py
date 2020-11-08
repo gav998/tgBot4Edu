@@ -6,7 +6,7 @@ import telebot
 
 bot = telebot.TeleBot(TOKEN)
 
-admin_chat_id = '461258157' # message.chat.id администратора ресурса для загрузки заданий в бд
+admin_chat_id = 46125815 # message.chat.id администратора ресурса для загрузки заданий в бд
 
 users = {}
 # users[tg_id]['login']
