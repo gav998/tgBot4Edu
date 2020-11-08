@@ -22,10 +22,10 @@ def get_subjects():
         subjects[subject]['topics'] = {}
         topics = get_topics(subjects[subject]['path'])
         topic_num = 0
-        for topic, max_level in topics:
+        for topic in topics:
             subjects[subject]['topics'][topic_num] = {}
-            subjects[subject]['topics'][topic_num]['name'] = topic
-            subjects[subject]['topics'][topic_num]['max_level'] = max_level
+            subjects[subject]['topics'][topic_num]['name'] = topic[0]
+            #subjects[subject]['topics'][topic_num]['max_level'] = max_level
             # - еще можно находить кол-во задач для всех уровней для равномерности
             topic_num += 1
     return subjects
@@ -75,7 +75,7 @@ def create_user(login, password):
 
 def get_topics(path):
     with sqlite3.connect(path) as db:
-        sql = "SELECT DISTINCT topics, difficulty_levels FROM tasks ORDER BY topics ASC, difficulty_levels DESC;"
+        sql = "SELECT DISTINCT topics FROM tasks ORDER BY topics;"
         return db.execute(sql)
 
 
@@ -97,7 +97,7 @@ def get_task_id(user_data: dict):
             db.execute(sql, (user_data['login'], user_data['subject'], user_data['topic'],))
             difficulty_level = 1
         # проверяем, можем ли перейти на новый уровень
-        if count_correct > COUNT_CORRECT_4_NEXT_LEVEL: 
+        if count_correct > COUNT_CORRECT_4_NEXT_LEVEL-1: 
             difficulty_level += 1
             count_correct = 0
             count_incorrect = 0
@@ -105,7 +105,7 @@ def get_task_id(user_data: dict):
             sql = f"INSERT INTO achivements(logins, subjects, topics, difficulty_levels) VALUES(?, ?, ?, ?);"
             db.execute(sql, (user_data['login'], user_data['subject'], user_data['topic'], difficulty_level,))
 
-    # - можно дополнительно проверять существует ли след уровень, если нет, то не повышать
+    # можно дополнительно проверять существует ли след уровень, если нет, то не повышать
 
     # Найти задачу подходящего уровня
     with sqlite3.connect(user_data['subject_path']) as db:
@@ -114,6 +114,10 @@ def get_task_id(user_data: dict):
             # проверять кол-во репортов на задачу и не выдавать такие
             if _count_error > CRITICAL_COUNT_OF_ERROR_4_TASK:
                 continue
+                
+            # - Успешно решенные не предлагать
+            # - в логах проверять логин и id и статус, если есть, увеличивать каунтер использований и искать следующую
+            # - для этого надо реализовать логи
             return _id, difficulty_level, COUNT_CORRECT_4_NEXT_LEVEL - count_correct
     return None, None, None
 

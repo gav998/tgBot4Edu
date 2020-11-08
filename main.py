@@ -8,6 +8,8 @@ bot = telebot.TeleBot(TOKEN)
 
 admin_chat_id = 461258157 # message.chat.id администратора ресурса для загрузки заданий в бд
 
+MIN_TIME_2_TASK = 5
+
 users = {}
 # users[tg_id]['login']
 # users[tg_id]['subject_num']
@@ -275,8 +277,6 @@ def f3_2(message):
         print(message.from_user.id, message.text, "f3_2")
         if get_login_authorization(message.from_user.id) is None:
             raise Exception("Вы не авторизованы")        
-        tg_user_id = message.from_user.id
-        
         if message.content_type != "text":
             raise Exception("Ожидалось текстовое сообщение")
         if message.text == "Error":
@@ -287,15 +287,21 @@ def f3_2(message):
             raise Exception("Сообщение об ошибке принято")
         if message.text == "End":
             raise Exception("Принято")
-
-        # -увеличить счетчик использований в tasks
+        
+        # регистрируем время ответа
+        users[message.from_user.id]['time_end'] = time.time()
+        if users[message.from_user.id]['time_end'] - users[message.from_user.id]['time_start'] < MIN_TIME_2_TASK:
+            raise Exception("Пожалуйста, внимательно читайте условие!!!")
+        tg_user_id = message.from_user.id
+        
+        # если ответ правильный
         if message.text == users[tg_user_id]['task']['correct_answer']:
-            # -обработать и добавить в достижение +
+            # обработать и добавить в достижение +
             users[tg_user_id]["task_status"] = True # нужен для пометки решения
             msg = bot.send_message(message.chat.id, "+")
             # ответ правильный
         else:
-            # -обработать и добавить в достижение -
+            # обработать и добавить в достижение -
             users[tg_user_id]["task_status"] = False # нужен для пометки не решения
             msg = bot.send_message(message.chat.id, "-")
             # ответ правильный
@@ -312,7 +318,6 @@ def f3_2(message):
 
 # Формирование отчета-статистики по предмету
 def f4_1(message):
-    print(message.from_user.id, message.text, "f4_1")
     print(message.from_user.id, message.text, "f4_1")
     pass
 
