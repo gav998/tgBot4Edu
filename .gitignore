@@ -1,7 +1,4 @@
-
-/settings.py
-/sys.db
-/tasks/*
+private/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,4 +1,4 @@
-from settings import TOKEN
+from private.settings import TOKEN
 from utils import *
 
 import time
@@ -22,6 +22,10 @@ users = {}
 # users[tg_id]['task']['text']
 # users[tg_id]['task']['attachment']
 # users[tg_id]['task']['correct_answer']
+# users[tg_id]['time_start']
+# users[tg_id]['time_end']
+# users[tg_id]['task_status']
+# users[tg_id]['answer']
 
 subjects = get_subjects()
 # subjects[№]['topics'][№]['name']
@@ -32,7 +36,7 @@ subjects = get_subjects()
 @bot.message_handler(commands=['start'])
 def f1_1(message):
     try:
-        print(message.from_user.id,message.chat.id, message.text, "f1_1")
+        print(message.from_user.id, message.text, "f1_1")
         if message.content_type != "text":
             raise Exception("Ожидалось текстовое сообщение")
 
@@ -45,14 +49,10 @@ def f1_1(message):
             f2_1(message)
         else:
             # просим указать номер по списку в ЭЖД
-            s = f'Здравствуйте, {message.from_user.first_name}!\n\n'
-            s += f'Данный телеграмм чат создан командой школы 1191 для тестирования обучающихся.\n'
-            s += f'Это opensource проект (https://github.com/gav998/tgBot4Edu/).\n'
-            s += f'Ты можешь поучаствовать в его доработке,'
-            s += f'присоединяйся к сообществу.\n\n'
+            s = ''
             s += f'Для старта тренировок укажи свой идентификационный код:\n'
             s += f'(номер класса)(буква класса)_(номер по списку в ЭЖД)\n\n'
-            s += f'Например, для ученика 7Б класса под номером 11 в ЭЖД,'
+            s += f'Например, для ученика 7Б класса под номером 11 в ЭЖД, '
             s += f'идентификационный код будет таким: 7Б_11\n'
             msg = bot.send_message(message.chat.id, s)
 
@@ -110,7 +110,7 @@ def f1_2(message):
 # ожидаем пароль
 def f1_3(message):
     try:
-        print(message.from_user.id, message.text, "f1_3")       
+        print(message.from_user.id, users[message.from_user.id]['login'], message.text, "f1_3")       
         if message.content_type != "text":
             raise Exception("Ожидалось текстовое сообщение")
 
@@ -140,7 +140,7 @@ def f1_3(message):
 # выбор предмета
 def f2_1(message):
     try:
-        print(message.from_user.id, message.text, "f2_1")
+        print(message.from_user.id, users[message.from_user.id]['login'], "f2_1")
             
         s = "Доступен выбор предмета. Укажите только номер:\n"
         for i in range(0, len(subjects)):
@@ -157,7 +157,7 @@ def f2_1(message):
 # ожидаем выбор предмета и запрашиваем тему
 def f2_2(message):
     try:
-        print(message.from_user.id, message.text, "f2_2")
+        print(message.from_user.id,users[message.from_user.id]['login'], message.text, "f2_2")
         if message.content_type != "text":
             raise Exception("Ожидалось текстовое сообщение")
         if not message.text.isnumeric():
@@ -169,13 +169,7 @@ def f2_2(message):
         n = users[message.from_user.id]['subject_num'] = int(message.text) - 1
         users[message.from_user.id]['subject_path'] = subjects[n]['path']
         users[message.from_user.id]['subject'] = subjects[n]['name']
-        
-        # если это учитель, то формируем статистику
-        if (check_re_t(users[message.from_user.id]['login'])):
-                f4_1(message)
-                s = "Для повторного формирования отчета, напишите /start\n"
-                s += "Вы можете продолжить решать задачи по предмету.\n"
-                msg = bot.send_message(message.chat.id, s)
+
         #
         s = "Выберете тему:\n"
         for t in range(0, len(subjects[n]['topics'])):
@@ -205,15 +199,16 @@ def f2_3(message):
         users[message.from_user.id]['topic_num'] = int(message.text) - 1
         subject = users[message.from_user.id]['subject_num']
         users[message.from_user.id]['topic'] = subjects[subject]['topics'][int(message.text) - 1]['name']
-
-        s = 'Начнем\n'
-        s += 'Если Вы обнаружили ошибку в задании, напечатайте "Error"\n'
-        s += 'Для остановки, напечатайте "End"\n\n'
-        s += 'Удачи!\n'
-
-        msg = bot.send_message(message.chat.id, s)
-        f3_1(message)
-        # переходим к решению задач
+        
+        # если это учитель, то формируем статистику
+        if (check_re_t(users[message.from_user.id]['login'])):
+            s = "Пожалуйста, введите номер и букву класса. Например, 7А.\n"
+            msg = bot.send_message(message.chat.id, s)
+            bot.register_next_step_handler(msg, f4_1)
+ 
+        else:
+            f3_1(message)
+            # переходим к решению задач
 
     except Exception as e:
         print(e)
@@ -224,8 +219,15 @@ def f2_3(message):
 # Выбираем подходящую задачу
 def f3_1(message):
     try:
-        print(message.from_user.id, message.text, "f3_1")
+        print(message.from_user.id, users[message.from_user.id]['login'], "f3_1")
         tg_user_id = message.from_user.id
+        
+        s = 'Начнем\n'
+        s += 'Если Вы обнаружили ошибку в задании, напечатайте "Error"\n'
+        s += 'Для остановки, напечатайте "End"\n\n'
+        s += 'Удачи!\n'
+        msg = bot.send_message(message.chat.id, s)
+        
         
         # тут вся магия подбора задачи для пользователя
         # передаем логин, предмет, тему
@@ -252,7 +254,7 @@ def f3_1(message):
         # Формируем статус уровня
         s = ""
         s += f"Текущий уровень - {difficulty_level}\n"
-        s += f"Для перехода на новый уровень осталось решить {count_correct_need} задач.\n\n"
+        s += f"Для перехода на новый уровень осталось решить задач: {count_correct_need}\n\n"
         # добавляем текст
         s += text
 
@@ -274,16 +276,14 @@ def f3_1(message):
 # Ожидаем ответа на задачу
 def f3_2(message):
     try:
-        print(message.from_user.id, message.text, "f3_2")
+        print(message.from_user.id, users[message.from_user.id]['login'], message.text, "f3_2")
         if get_login_authorization(message.from_user.id) is None:
             raise Exception("Вы не авторизованы")        
         if message.content_type != "text":
             raise Exception("Ожидалось текстовое сообщение")
         if message.text == "Error":
-            # увеличиваем счетчик ошибок в tasks
-            update_errors_count(users[tg_user_id]['subject_path'], users[tg_user_id]['task']['task_id'])
-            # увеличиваем счетчик ошибок в achivements
-            update_errors_count2(users[tg_user_id])
+            # увеличиваем счетчик ошибок в tasks и achivements
+            update_errors_count(users[tg_user_id])
             raise Exception("Сообщение об ошибке принято")
         if message.text == "End":
             raise Exception("Принято")
@@ -292,8 +292,9 @@ def f3_2(message):
         users[message.from_user.id]['time_end'] = time.time()
         if users[message.from_user.id]['time_end'] - users[message.from_user.id]['time_start'] < MIN_TIME_2_TASK:
             raise Exception("Пожалуйста, внимательно читайте условие!!!")
-        tg_user_id = message.from_user.id
         
+        tg_user_id = message.from_user.id
+        users[tg_user_id]['answer'] = message.text
         # если ответ правильный
         if message.text == users[tg_user_id]['task']['correct_answer']:
             # обработать и добавить в достижение +
@@ -306,7 +307,7 @@ def f3_2(message):
             msg = bot.send_message(message.chat.id, "-")
             # ответ правильный
             
-        insert_progress(users[tg_user_id])
+        insert_progress(users[tg_user_id], tg_user_id)
 
         f3_1(message)
 
@@ -316,10 +317,31 @@ def f3_2(message):
                                f'{e}\n попробуем еще раз..\n\nВведите /start для продолжения')
 
 
-# Формирование отчета-статистики по предмету
+# Формирование отчета-статистики по теме
+# Ожидаем номер класса, для которого надо сформировать статистику по теме
 def f4_1(message):
-    print(message.from_user.id, message.text, "f4_1")
-    pass
+    try:
+        print(message.from_user.id, users[message.from_user.id]['login'], message.text, "f4_1")
+        
+        group = message.text
+        # Формируем первую таблицу
+        s = get_result_1(users[message.from_user.id], group)
+        msg = bot.send_message(message.chat.id, s)
+        
+        # Формируем вторую таблицу
+        #s = get_result_2(users[message.from_user.id], group)
+        #msg = bot.send_message(message.chat.id, s)
+        
+        s = "Для повторного формирования отчета, напишите /start\n"
+        s += "Вы можете продолжить решать задачи по предмету.\n"
+        msg = bot.send_message(message.chat.id, s)
+        
+        f3_1(message)
+    except Exception as e:
+        print(e)
+        msg = bot.send_message(message.chat.id,
+                               f'{e}\n попробуем еще раз..\n\nВведите /start для продолжения')
+
 
 
 if __name__ == "__main__":
