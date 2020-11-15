@@ -1,1 +1,1 @@
-TOKEN = "Ваш токен"
+TOKEN = "ВАШ ТОКЕН (BotFather)"
