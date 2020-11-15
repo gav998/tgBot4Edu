@@ -375,7 +375,7 @@ def add_tasks(u, tg_id, text):
         subjects = get_subjects()
         raise Exception(f"Выполнено\n")
     else: 
-        FULL_PATH = f'{PATH_TASKS}{doc.file_name}'
+        FULL_PATH = f"{PATH_TASKS}{u[tg_id]['doc'].file_name}"
         os.remove(FULL_PATH)
         raise Exception(f"Отменено\n")
 
