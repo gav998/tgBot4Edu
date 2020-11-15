@@ -277,9 +277,9 @@ def f3_2(u, tg_id, text):
 # Формирование отчета-статистики по теме
 # Ожидаем номер класса, для которого надо сформировать статистику по теме
 def result_class(u, tg_id, text):
-    if not 'subject' in u:
+    if not 'subject' in u[tg_id]:
         raise Exception(f"Не выбран предмет")
-    if not 'topic' in u:
+    if not 'topic' in u[tg_id]:
         raise Exception(f"Не выбрана тема")
  
     group = text
