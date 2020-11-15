@@ -3,7 +3,7 @@ import re
 import random
 import string
 
-from private.settings import TOKEN
+from private.settings import TOKEN, ADMIN_ID
 
 import os.path
 import time
@@ -13,7 +13,7 @@ import pandas
 
 bot = telebot.TeleBot(TOKEN)
 
-ADMIN_ID = [461258157] # message.chat.id администраторов ресурса
+
 
 DB_SYS_PATH = 'private/sys.db'
 DB_LOG_PATH = 'private/log.db'
