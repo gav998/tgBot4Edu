@@ -49,8 +49,7 @@ subjects = {}
 
 def f1_1(u, tg_id):
     # если пользователь авторизован
-    u[tg_id] = {} 
-    u[tg_id]['route'] = 'f1_1'    
+    u[tg_id] = {}    
     login = get_login_authorization(tg_id)
     if login is not None:
         msg = bot.send_message(tg_id, f'Вы авторизованы под логином {login}')
@@ -182,11 +181,14 @@ def f2_3(u, tg_id, text):
     
     if (check_re_t(u[tg_id]['login'])):
         # если это учитель, то формируем статистику
-        s = "Если Вы хотите запросить статистику выполнения заданий темы для класса, пожалуйста, введите /result_class номер и букву класса. Например,\n /result_class 7А.\n\n"
+        s = "Если Вы хотите запросить статистику выполнения заданий темы для класса, пожалуйста, введите номер и букву класса. Например,\n 7А\n\n"
         msg = bot.send_message(tg_id, s)
-    # переходим к решению задач
-    u[tg_id]['route'] = 'f3_0'
-    u[tg_id]['wait'] = False 
+        u[tg_id]['route'] = 'result_class'
+        u[tg_id]['wait'] = True 
+    else:
+        # переходим к решению задач
+        u[tg_id]['route'] = 'f3_0'
+        u[tg_id]['wait'] = False 
             
 
 # обучение по теме
@@ -295,7 +297,8 @@ def result_class(u, tg_id, text):
     #s = get_result_2(u[tg_id], group)
     #msg = bot.send_message(tg_id, s)
 
-    u[tg_id]['route'] = 'f3_1'
+    # переходим к решению задач
+    u[tg_id]['route'] = 'f3_0'
     u[tg_id]['wait'] = False 
 
 #проверяем корректность таблицы excel

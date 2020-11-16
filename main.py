@@ -55,10 +55,15 @@ def router(m):
                 del u[u_id]
             
 
-        # учительская. результаты класса по выбранному предмету и теме
+        # учительская. все результаты ученика
+        '''
         if check_re_t(u[tg_id]['login']) and text.split(' ')[0] == '/result_class':
             result_class(u, tg_id, text.split(' ')[1])
-
+            if u[tg_id]['wait']:
+                return 0 
+        '''
+        
+        
         # учительская. добавление заданий
         if check_re_t(u[tg_id]['login']) and u[tg_id]['route'] == 'add_tasks':
             add_tasks(u, tg_id, text)
@@ -80,6 +85,12 @@ def router(m):
             f2_3(u, tg_id,text)
             if u[tg_id]['wait']:
                 return 0  
+
+        # учительская. результаты класса
+        if check_re_t(u[tg_id]['login']) and u[tg_id]['route'] == 'result_class':
+            result_class(u, tg_id, text)
+            if u[tg_id]['wait']:
+                return 0 
 
         # обучение по теме
         if u[tg_id]['route'] == 'f3_0': 
