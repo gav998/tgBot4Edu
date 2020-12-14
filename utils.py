@@ -289,7 +289,7 @@ def result_class(u, tg_id, text):
     s = get_result_1(u[tg_id], group)
     msg = bot.send_message(tg_id, s)
     
-    s = "Для повторного формирования отчета, напишите /start, укажите предмет, тему и напишите /result_class 7А\n(пример для 7А)"
+    s = "Для повторного формирования отчета, напишите /start\n"
     s += "Вы можете продолжить решать задачи по предмету.\n"
     msg = bot.send_message(tg_id, s)
 
