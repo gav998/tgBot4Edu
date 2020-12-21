@@ -241,7 +241,7 @@ def f3_1(u, tg_id):
         photo = open('./tmp/photo.png', 'wb')
         photo.write(png_recovered)
         photo.close()
-        photo = open('/tmp/photo.png', 'rb')
+        photo = open('./tmp/photo.png', 'rb')
         msg = bot.send_photo(tg_id, photo)
 
     # регистрируем время начала
@@ -374,7 +374,7 @@ def promt_add_tasks(u, tg_id, doc):
         photo = open('./tmp/photo.png', 'wb')
         photo.write(png_recovered)
         photo.close()
-        photo = open('/tmp/photo.png', 'rb')
+        photo = open('./tmp/photo.png', 'rb')
         msg = bot.send_photo(tg_id, photo)
 
     msg = bot.send_message(tg_id, s)
