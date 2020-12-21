@@ -237,8 +237,8 @@ def f3_1(u, tg_id):
     # отправляем
     msg = bot.send_message(tg_id, s)
     if(len(attachment)>50):
-        png_recovered = base64.decodestring(attachment)
-        photo = open('/tmp/photo.png', 'w')
+        png_recovered = base64.b64decode(attachment)
+        photo = open('./tmp/photo.png', 'wb')
         photo.write(png_recovered)
         photo.close()
         photo = open('/tmp/photo.png', 'rb')
@@ -363,11 +363,20 @@ def promt_add_tasks(u, tg_id, doc):
     s += f"Кол-во задач в таблице: {len(xlsx[xlsx.columns[0]])}\n"
     s += f"Пример задачи:\n"
     s += f"{xlsx[xlsx.columns[0]][0]}\n\n"
-    s += f"Фото (base64 encode):\n"
-    s += f"{xlsx[xlsx.columns[1]][0]}\n\n"
     s += f"Ответ: "
     s += f"{xlsx[xlsx.columns[2]][0]}\n\n"
     s += f"Добавить задачи в таблицу?\n1.Да\n0.Нет\n"
+
+    
+    attachment = xlsx[xlsx.columns[1]][0]
+    if(len(attachment)>50):
+        png_recovered = base64.b64decode(attachment)
+        photo = open('./tmp/photo.png', 'wb')
+        photo.write(png_recovered)
+        photo.close()
+        photo = open('/tmp/photo.png', 'rb')
+        msg = bot.send_photo(tg_id, photo)
+
     msg = bot.send_message(tg_id, s)
 
     u[tg_id]['route'] = 'add_tasks'
