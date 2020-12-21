@@ -2,6 +2,8 @@ import sqlite3
 import re
 import random
 import string
+import base64 
+
 
 from private.settings import TOKEN, ADMIN_ID
 
@@ -231,9 +233,16 @@ def f3_1(u, tg_id):
     s += f"Для перехода на новый уровень осталось решить задач: {count_correct_need}\n\n"
     # добавляем текст
     s += text
-
+    
     # отправляем
     msg = bot.send_message(tg_id, s)
+    if(len(attachment)>50):
+        png_recovered = base64.decodestring(attachment)
+        photo = open('/tmp/photo.png', 'w')
+        photo.write(png_recovered)
+        photo.close()
+        photo = open('/tmp/photo.png', 'rb')
+        msg = bot.send_photo(tg_id, photo)
 
     # регистрируем время начала
     u[tg_id]['time_start'] = time.time()
@@ -667,6 +676,26 @@ def get_subjects():
     subjects[i] = {}
     subjects[i]['name'] = 'Обществознание'
     subjects[i]['path'] = 'private/subject_society.db'
+
+    i = len(subjects) 
+    subjects[i] = {}
+    subjects[i]['name'] = 'История'
+    subjects[i]['path'] = 'private/subject_history.db'
+    
+    i = len(subjects) 
+    subjects[i] = {}
+    subjects[i]['name'] = 'Химия'
+    subjects[i]['path'] = 'private/subject_chemistry.db'  
+
+    i = len(subjects) 
+    subjects[i] = {}
+    subjects[i]['name'] = 'Биология'
+    subjects[i]['path'] = 'private/subject_biology.db'     
+    
+    i = len(subjects) 
+    subjects[i] = {}
+    subjects[i]['name'] = 'Английский язык'
+    subjects[i]['path'] = 'private/subject_english.db'      
     
     create_tasks(subjects)
     # Для ускорения работы проанализируем список тем для каждого предмета
