@@ -28,7 +28,7 @@ def router(m):
 
         # ожидаем номер ЭЖД и запрашиваем пароль
         if tg_id in u and u[tg_id]['route'] == 'f1_2': 
-            f1_2(u, tg_id,text)
+            f1_2(u, tg_id,text.upper())
             if u[tg_id]['wait']:
                 return 0
         
@@ -46,13 +46,14 @@ def router(m):
             f1_1(u, tg_id)
             if u[tg_id]['wait']:
                 return 0
-
+            
         # учительская. удаление ученика и деавторизация (без сброса результатов)
         if check_re_t(u[tg_id]['login']) and text.split(' ')[0] == '/reset_password':
             u_id = get_id_authorization(text.split(' ')[1])
-            reset_password(text.split(' ')[1])
+            reset_password(tg_id, text.split(' ')[1])
             if (u_id is not None) and (u_id in u): 
                 del u[u_id]
+            raise Exception(f"Ок")
             
 
         # учительская. все результаты ученика
@@ -111,6 +112,8 @@ def router(m):
             if u[tg_id]['wait']:
                 return 0 
 
+  
+
     except Exception as e:
         print('Ошибка:\n', traceback.format_exc())
         # для возврата к самому началу
@@ -162,34 +165,6 @@ def router_doc(m):
         msg = bot.send_message(tg_id,
                                f'{e}\noooops, попробуйте загрузить документ еще раз..\n\nИли введите /start')
 
-
-
-'''
-def document_2(m):
-    try:
-        name = u[m.from_user.id]['doc_name']
-        if(m.text == "1"):
-            # определяем бд предмета
-            subject = None
-            for i in range(0,len(subjects)):
-                if name.split('.')[0] == subjects[i]['name']:
-                    subject = i
-                    break
-            
-            if subject is None:
-                os.remove(f"{PATH_TASKS}/{name}")
-                raise Exception("Для создания нового предмета необходимо создать БД")
-            
-            
-            insert_xlsx(subjects[subject]['path'],u[m.from_user.id]['doc_name'].split('.'), u[m.from_user.id]['doc'])
-        else: 
-            os.remove(f"{PATH_TASKS}/{name}")
-    
-    except Exception as e:
-        print('Ошибка:\n', traceback.format_exc())
-        msg = bot.send_message(m.chat.id,
-                               f'{e}\n попробуем еще раз..\n\nВведите /start для продолжения')
-'''
 if __name__ == "__main__":
     start = time.time()
     print('start bot')

@@ -17,9 +17,10 @@ bot = telebot.TeleBot(TOKEN)
 
 
 
-DB_SYS_PATH = 'private/sys.db'
-DB_LOG_PATH = 'private/log.db'
-PATH_TASKS = 'private/tasks/'
+DB_SYS_PATH = './private/sys.db'
+DB_LOG_PATH = './private/log.db'
+PATH_TASKS = './private/tasks/'
+PATH_TASKS_TEMP = './tmp/tasks/'
 
 COUNT_CORRECT_4_NEXT_LEVEL = 3
 CORRECT_ABOVE_INCORRECT_IN = 2
@@ -61,7 +62,7 @@ def f1_1(u, tg_id):
     else:
         # просим указать номер по списку в ЭЖД
         s = ''
-        s += f'Для старта тренировок укажи свой идентификационный код:\n'
+        s += f'Для старта укажите идентификационный код:\n\n'
         s += f'(номер класса)(буква класса)_(номер по списку в ЭЖД)\n\n'
         s += f'Например, для ученика 7Б класса под номером 11 в ЭЖД, '
         s += f'идентификационный код будет таким: 7Б_11\n'
@@ -102,10 +103,13 @@ def f1_2(u, tg_id,text):
             u[tg_id]['wait'] = False
         else:
             s = f"Пользователю {text} назначен пароль {password}\n"
-            for tg_id in ADMIN_ID:
-                msg = bot.send_message(tg_id, s)
-            raise Exception("Пароль направлен администратору ресурса")
-
+            for tg_admin in ADMIN_ID:
+                msg = bot.send_message(tg_admin, s)
+            msg = bot.send_message(tg_id,
+                               f"Пароль направлен администратору ресурса!\n\nВведите, пожалуйста, пароль:\n")
+            # ожидаем пароль пользователя
+            u[tg_id]['route'] = 'f1_3'
+            u[tg_id]['wait'] = True
 
 # ожидаем пароль
 def f1_3(u, tg_id,text):
@@ -236,12 +240,12 @@ def f3_1(u, tg_id):
     
     # отправляем
     msg = bot.send_message(tg_id, s)
-    if(len(attachment)>50):
+    if(not attachment is None)and(len(attachment)>50):
         png_recovered = base64.b64decode(attachment)
-        photo = open('./tmp/photo.png', 'wb')
+        photo = open(f"./tmp/{u[tg_id]['login']}.png", 'wb')
         photo.write(png_recovered)
         photo.close()
-        photo = open('./tmp/photo.png', 'rb')
+        photo = open(f"./tmp/{u[tg_id]['login']}.png", 'rb')
         msg = bot.send_photo(tg_id, photo)
 
     # регистрируем время начала
@@ -316,7 +320,7 @@ def check_tasks(doc):
     
     # в названии должно быть 5 аргументов
     if len(name_split) != 5:
-        raise Exception(f"Ожидалось 5 аргументов в названии: Предмет+Класс+Тема+Уровень.xlsx\nтекущий формат: {name_split}\n")
+        raise Exception(f"Ожидалось 5 аргументов в названии: \n\nПредмет+Класс+Тема+Уровень.xlsx\n\nТекущий формат: \n{name_split}\n")
     
     # предмет должен существовать
     is_subject(name_split[0])
@@ -343,7 +347,7 @@ def promt_add_tasks(u, tg_id, doc):
     # скачиваем файл
     file_info = bot.get_file(doc.file_id)
     downloaded_file = bot.download_file(file_info.file_path)
-    FULL_PATH = f'{PATH_TASKS}{doc.file_name}'
+    FULL_PATH = f'{PATH_TASKS_TEMP}{doc.file_name}'
     with open(FULL_PATH, 'wb') as new_file:
         new_file.write(downloaded_file)
 
@@ -368,13 +372,13 @@ def promt_add_tasks(u, tg_id, doc):
     s += f"Добавить задачи в таблицу?\n1.Да\n0.Нет\n"
 
     
-    attachment = xlsx[xlsx.columns[1]][0]
-    if(len(attachment)>50):
+    attachment = f'{xlsx[xlsx.columns[1]][0]}'
+    if(not attachment is None)and(len(attachment)>50):
         png_recovered = base64.b64decode(attachment)
-        photo = open('./tmp/photo.png', 'wb')
+        photo = open(f"./tmp/{u[tg_id]['login']}.png", 'wb')
         photo.write(png_recovered)
         photo.close()
-        photo = open('./tmp/photo.png', 'rb')
+        photo = open(f"./tmp/{u[tg_id]['login']}.png", 'rb')
         msg = bot.send_photo(tg_id, photo)
 
     msg = bot.send_message(tg_id, s)
@@ -386,17 +390,25 @@ def promt_add_tasks(u, tg_id, doc):
 def add_tasks(u, tg_id, text):
     global subjects
     if text == '1':
-        name_split = split_file_name(u[tg_id]['doc'].file_name)
+        doc = u[tg_id]['doc']
+        
+        name_split = split_file_name(doc.file_name)
 
         # предмет должен существовать
         subject = is_subject(name_split[0])
         
         insert_xlsx(subjects[subject]['path'],name_split, u[tg_id]['doc_file'])
         
+        os.rename(f'{PATH_TASKS_TEMP}{doc.file_name}', f'{PATH_TASKS}{doc.file_name}')
+        
         subjects = get_subjects()
+        
+        for tg_admin_id in ADMIN_ID:
+            msg = bot.send_message(tg_admin_id, f"Пользователь {get_login_authorization(tg_id)} добавил {name_split}")
+        
         raise Exception(f"Выполнено\n")
     else: 
-        FULL_PATH = f"{PATH_TASKS}{u[tg_id]['doc'].file_name}"
+        FULL_PATH = f"{PATH_TASKS_TEMP}{u[tg_id]['doc'].file_name}"
         os.remove(FULL_PATH)
         raise Exception(f"Отменено\n")
 
@@ -439,14 +451,15 @@ def set_login_deauthorization(login):
         db.execute(sql, (login, )) 
 
 
-def reset_password(login):
+def reset_password(tg_id, login):
     with sqlite3.connect(DB_SYS_PATH) as db:  
         sql = "DELETE FROM login_password WHERE logins = (?)"
         db.execute(sql, (login, ))
         sql = "DELETE FROM list_of_authorizations WHERE logins = (?)"
         db.execute(sql, (login, )) 
-    for tg_id in ADMIN_ID:
-        msg = bot.send_message(tg_id, f"Пользователь {login} удален")
+    for tg_admin_id in ADMIN_ID:
+        msg = bot.send_message(tg_admin_id, f"Пользователь {login} удален пользователем {get_login_authorization(tg_id)}")
+    msg = bot.send_message(tg_id, f"Пользователь {login} удален")
         
 
 def get_password(login):
@@ -602,7 +615,7 @@ def check_re(text):
 
 
 def check_re_t(text):
-    regexp = r"(^teacher_\d*)"
+    regexp = r"(^TEACHER_\d*)"
     matches = re.match(regexp, text)
     if matches is not None:
         return True
@@ -620,7 +633,11 @@ def get_result_1(user_data: dict, group):
         AND subjects = (?)
         AND topics = (?);"""
         for login, lvl, correct, incorrect, error in db.execute(sql, (user_data['subject'], user_data['topic'],)):
-            num = int(login[len(group)+1:])
+            num = 0
+            if login[len(group)+1:].isdigit():
+                num = int(login[len(group)+1:])
+            else:
+                num = login
             if not num in res:
                 res[num] = {}
             res[num][lvl] = {}
@@ -648,13 +665,18 @@ def split_file_name(file_name):
     
 def insert_xlsx(path, name, xlsx):
     with sqlite3.connect(path) as db:
+        count = 0
         sql = "INSERT INTO tasks(classes, topics, difficulty_levels, texts, attachments, answers) "
         sql += "VALUES(?, ?, ?, ?, ?, ?);"
         for i in range(0, len(xlsx[xlsx.columns[0]])):
             text = str(xlsx[xlsx.columns[0]][i])
             attachment = str(xlsx[xlsx.columns[1]][i])
             answer = str(xlsx[xlsx.columns[2]][i])
-            db.execute(sql,(name[1],name[2],name[3], text,attachment,answer,))
+            print("insert_xlsx", count, text)
+            if (not "nan" in [text, answer]) and (len(text)>5):
+                db.execute(sql,(name[1],name[2],name[3], text,attachment,answer,))
+                count += 1
+        print(f"/nДобавлено {count} записей в /n{path}/n{name}/n")
     
 
 # список доступных дисциплин
@@ -664,47 +686,47 @@ def get_subjects():
     i = len(subjects) 
     subjects[i] = {}
     subjects[i]['name'] = 'Математика'
-    subjects[i]['path'] = 'private/subject_math.db'
+    subjects[i]['path'] = './private/subject_math.db'
     
     i = len(subjects) 
     subjects[i] = {}
     subjects[i]['name'] = 'Информатика'
-    subjects[i]['path'] = 'private/subject_inf.db'
+    subjects[i]['path'] = './private/subject_inf.db'
     
     i = len(subjects) 
     subjects[i] = {}
     subjects[i]['name'] = 'Русский язык'
-    subjects[i]['path'] = 'private/subject_rus.db'
+    subjects[i]['path'] = './private/subject_rus.db'
     
     i = len(subjects) 
     subjects[i] = {}
     subjects[i]['name'] = 'Физика'
-    subjects[i]['path'] = 'private/subject_physics.db'
+    subjects[i]['path'] = './private/subject_physics.db'
     
     i = len(subjects) 
     subjects[i] = {}
     subjects[i]['name'] = 'Обществознание'
-    subjects[i]['path'] = 'private/subject_society.db'
+    subjects[i]['path'] = './private/subject_society.db'
 
     i = len(subjects) 
     subjects[i] = {}
     subjects[i]['name'] = 'История'
-    subjects[i]['path'] = 'private/subject_history.db'
+    subjects[i]['path'] = './private/subject_history.db'
     
     i = len(subjects) 
     subjects[i] = {}
     subjects[i]['name'] = 'Химия'
-    subjects[i]['path'] = 'private/subject_chemistry.db'  
+    subjects[i]['path'] = './private/subject_chemistry.db'  
 
     i = len(subjects) 
     subjects[i] = {}
     subjects[i]['name'] = 'Биология'
-    subjects[i]['path'] = 'private/subject_biology.db'     
+    subjects[i]['path'] = './private/subject_biology.db'     
     
     i = len(subjects) 
     subjects[i] = {}
     subjects[i]['name'] = 'Английский язык'
-    subjects[i]['path'] = 'private/subject_english.db'      
+    subjects[i]['path'] = './private/subject_english.db'      
     
     create_tasks(subjects)
     # Для ускорения работы проанализируем список тем для каждого предмета
