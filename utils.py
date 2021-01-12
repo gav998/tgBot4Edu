@@ -300,7 +300,7 @@ def result_class(u, tg_id, text):
     group = text
     # Формируем первую таблицу
     s = get_result_1(u[tg_id], group)
-    msg = bot.send_message(tg_id, s)
+    msg = bot.send_message(tg_id, s, parse_mode="markdown")
     
     s = "Для повторного формирования отчета, напишите /start\n"
     s += "Вы можете продолжить решать задачи по предмету.\n"
@@ -627,12 +627,12 @@ def get_result_1(user_data: dict, group):
     res = {}
     with sqlite3.connect(DB_SYS_PATH) as db:
         # - надо безопаснее..
-        sql = f"""SELECT logins,difficulty_levels,count_correct,count_incorrect,count_error
+        sql = f"""SELECT logins,difficulty_levels,count_correct,count_incorrect,count_error,viewed
         FROM achivements 
         WHERE logins LIKE '{group}%'
         AND subjects = (?)
         AND topics = (?);"""
-        for login, lvl, correct, incorrect, error in db.execute(sql, (user_data['subject'], user_data['topic'],)):
+        for login, lvl, correct, incorrect, error, viewed in db.execute(sql, (user_data['subject'], user_data['topic'],)):
             num = 0
             if login[len(group)+1:].isdigit():
                 num = int(login[len(group)+1:])
@@ -644,6 +644,11 @@ def get_result_1(user_data: dict, group):
             res[num][lvl]['correct'] = correct
             res[num][lvl]['incorrect'] = incorrect
             res[num][lvl]['error'] = error
+            res[num][lvl]['viewed'] = viewed
+        sql = f"""UPDATE achivements SET viewed = True WHERE logins LIKE '{group}%'
+        AND subjects = (?)
+        AND topics = (?);"""
+        db.execute(sql, (user_data['subject'], user_data['topic'],))
     s = f"Статистика сформирована для класса {group} "
     s += f"по предмету {user_data['subject']}, "
     s += f"по теме {user_data['topic']}\n\n"
@@ -654,7 +659,10 @@ def get_result_1(user_data: dict, group):
         # можно не сортировать сложность по возрастанию (уже)
         for j in sorted(res[i].keys()):
             #s += f"{res[i][j]['correct']}/{res[i][j]['incorrect']}/{res[i][j]['error']}|"
-            s += f"{res[i][j]['correct']}, "
+            if res[i][j]['viewed']:
+                s += f"{res[i][j]['correct']}, "
+            else:
+                s += f"*{res[i][j]['correct']}*, "
         s += f'\n'
     return s
 
