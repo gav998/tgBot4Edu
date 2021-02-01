@@ -49,8 +49,8 @@ def router(m):
             
         # учительская. удаление ученика и деавторизация (без сброса результатов)
         if check_re_t(u[tg_id]['login']) and text.split(' ')[0] == '/reset_password':
-            u_id = get_id_authorization(text.split(' ')[1])
-            reset_password(tg_id, text.split(' ')[1])
+            u_id = get_id_authorization(text.split(' ')[1].upper())
+            reset_password(tg_id, text.split(' ')[1].upper())
             if (u_id is not None) and (u_id in u): 
                 del u[u_id]
             raise Exception(f"Ок")

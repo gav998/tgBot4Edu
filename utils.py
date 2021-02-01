@@ -61,12 +61,23 @@ def f1_1(u, tg_id):
         u[tg_id]['wait'] = False
     else:
         # просим указать номер по списку в ЭЖД
+        s = '''*Opensource проект "Академия. Чат бот."*
+
+Проект активно развивается и находится в стадии тестирования. 
+Если Вы нашли "баг", можете [сообщить нам](https://t.me/tg4edu_admin) ``
+
+Программный код проекта доступен по [ссылке](https://github.com/gav998/tgBot4Edu/)
+
+Предложения по совершенствованию образовательного материала и тестовых заданий Вы можете прислать через [форму](https://forms.gle/cGhdtYoKeiwUyA3bA)  
+
+'''
+        msg = bot.send_message(tg_id, s, parse_mode="markdown", disable_web_page_preview = True)
         s = ''
         s += f'Для старта укажите идентификационный код:\n\n'
-        s += f'(номер класса)(буква класса)_(номер по списку в ЭЖД)\n\n'
-        s += f'Например, для ученика 7Б класса под номером 11 в ЭЖД, '
-        s += f'идентификационный код будет таким: 7Б_11\n'
-        msg = bot.send_message(tg_id, s)
+        s += f'*(номер школы)_(номер класса)(буква класса)_(номер по списку в ЭЖД)*\n\n'
+        s += f'Например, для ученика школы 1191 7И класса под номером 11 в ЭЖД, '
+        s += f'идентификационный код будет таким: `1191_7И_11`\n'
+        msg = bot.send_message(tg_id, s, parse_mode="markdown")
 
         # ожидаем номера ЭЖД
         u[tg_id]['route'] = 'f1_2'
@@ -74,6 +85,8 @@ def f1_1(u, tg_id):
 
 # ожидаем номер ЭЖД
 def f1_2(u, tg_id,text):
+    text = text.upper()
+    text = text.replace(' ', '_')
     if not (check_re(text) or check_re_t(text)):
         raise Exception("Неправильный формат идентификационного кода")
     u[tg_id]['login'] = text
@@ -199,11 +212,18 @@ def f2_3(u, tg_id, text):
 
 # обучение по теме
 def f3_0(u, tg_id):
-    s = 'Начнем\n'
-    s += 'Если Вы обнаружили ошибку в задании, напечатайте "/error"\n'
-    s += 'Для остановки, напечатайте "/end"\n\n'
-    s += 'Удачи!\n'
-    msg = bot.send_message(tg_id, s)
+    s = '''*Opensource проект "Академия. Чат бот."*
+
+Проект активно развивается и находится в стадии тестирования. 
+Если Вы нашли "баг", можете [сообщить нам](https://t.me/tg4edu_admin) ``
+
+Программный код проекта доступен по [ссылке](https://github.com/gav998/tgBot4Edu/)
+
+Предложения по совершенствованию образовательного материала и тестовых заданий Вы можете прислать через [форму](https://forms.gle/cGhdtYoKeiwUyA3bA)  
+
+Вернуться к началу Вы можете командой /start
+'''
+    msg = bot.send_message(tg_id, s, parse_mode="markdown", disable_web_page_preview = True)
     u[tg_id]['route'] = 'f3_1'
     u[tg_id]['wait'] = False 
 
@@ -300,6 +320,7 @@ def result_class(u, tg_id, text):
     group = text
     # Формируем первую таблицу
     s = get_result_1(u[tg_id], group)
+    print(s)
     msg = bot.send_message(tg_id, s, parse_mode="markdown")
     
     s = "Для повторного формирования отчета, напишите /start\n"
@@ -605,7 +626,7 @@ def random_pass():
 
 
 def check_re(text):
-    regexp = r"(^\d+[А-ЯЁ]_\d*)"
+    regexp = r"(^\d+_\d+[А-ЯЁ]_\d*)"
     matches = re.match(regexp, text)
     if matches is not None:
         return True
@@ -645,17 +666,17 @@ def get_result_1(user_data: dict, group):
             res[num][lvl]['incorrect'] = incorrect
             res[num][lvl]['error'] = error
             res[num][lvl]['viewed'] = viewed
-        sql = f"""UPDATE achivements SET viewed = True WHERE logins LIKE '{group}%'
+        sql = f"""UPDATE achivements SET viewed = 1 WHERE logins LIKE '{group}%'
         AND subjects = (?)
         AND topics = (?);"""
         db.execute(sql, (user_data['subject'], user_data['topic'],))
-    s = f"Статистика сформирована для класса {group} "
-    s += f"по предмету {user_data['subject']}, "
-    s += f"по теме {user_data['topic']}\n\n"
+    s = f"Статистика сформирована для класса `{group}` "
+    s += f"по предмету `{user_data['subject']}`, "
+    s += f"по теме `{user_data['topic']}`\n\n"
     s += f"Формат: номер ученика | кол-во решенных задач 1 уровня, 2 уровня, ..\n\n"
     # надо сортировать учеников по возрастанию
     for i in sorted(res.keys()):
-        s += f'{i} | '
+        s += f'`{i}` | '
         # можно не сортировать сложность по возрастанию (уже)
         for j in sorted(res[i].keys()):
             #s += f"{res[i][j]['correct']}/{res[i][j]['incorrect']}/{res[i][j]['error']}|"
@@ -700,7 +721,7 @@ def get_subjects():
     subjects[i] = {}
     subjects[i]['name'] = 'Информатика'
     subjects[i]['path'] = './private/subject_inf.db'
-    
+    '''
     i = len(subjects) 
     subjects[i] = {}
     subjects[i]['name'] = 'Русский язык'
@@ -735,7 +756,7 @@ def get_subjects():
     subjects[i] = {}
     subjects[i]['name'] = 'Английский язык'
     subjects[i]['path'] = './private/subject_english.db'      
-    
+    '''
     create_tasks(subjects)
     # Для ускорения работы проанализируем список тем для каждого предмета
     for subject in subjects.keys():
