@@ -1,0 +1,10 @@
+Description=tgBot4Edu service
+After=multi-user.target
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/tgBot4Edu/
+ExecStart=/usr/bin/python3 /home/pi/tgBot4Edu/main.py
+Restart=always
+RestartSec=5
+[Install]
+WantedBy=multi-user.target
