@@ -16,7 +16,7 @@ The chat-bot to organize the testing of students in various disciplines.
 ```
 git clone https://github.com/gav998/tgBot4Edu
 cd tgBot4Edu
-pip install -r requirements.txt
+install.sh
 ```
 ## Start | Запуск
 `
